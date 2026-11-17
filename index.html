@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DeployCo Project Based Planning and P&amp;L Control Plane</title>
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--ink:#121a24;--mute:#5f6b7a;--line:#dde3ea;--acc:#2f4bd0;--accb:#e6ebfd;--g:#15784c;--gb:#dff3e8;--a:#a8650a;--ab:#fcefd3;--r:#b8332a;--rb:#fbe3e0;--rail:#0f1a2b;--railink:#d6deeb;--railmute:#8b9ab0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1118;--panel:#151c27;--ink:#e8edf4;--mute:#97a3b3;--line:#263041;--acc:#8aa4ff;--accb:#1d2850;--g:#52c995;--gb:#11352a;--a:#f0b64f;--ab:#3a2c0f;--r:#ff8178;--rb:#3d1b18;--rail:#080d14;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1118;--panel:#151c27;--ink:#e8edf4;--mute:#97a3b3;--line:#263041;--acc:#8aa4ff;--accb:#1d2850;--g:#52c995;--gb:#11352a;--a:#f0b64f;--ab:#3a2c0f;--r:#ff8178;--rb:#3d1b18;--rail:#080d14;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+.app{display:grid;grid-template-columns:268px minmax(0,1fr);min-height:100vh}
+aside{background:var(--rail);color:var(--railink);padding:20px 16px;display:flex;flex-direction:column;gap:22px}
+.brand{font:600 20px/1.1 Georgia,"Times New Roman",serif;color:#fff}
+.brand small{display:block;font:400 12px/1.4 ui-sans-serif,system-ui,sans-serif;color:var(--railmute);margin-top:4px}
+aside h3{margin:0 0 8px;font-size:12px;font-weight:600;color:var(--railmute)}
+.sys{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid #ffffff14}
+.dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:none;background:#3ecf8e}
+.dot.warn{background:#f0b64f}
+.sys b{display:block;font-weight:600;color:#fff}.sys span{font-size:12px;color:var(--railmute)}
+.fl{display:grid;gap:10px}
+.fl label{display:grid;gap:4px;font-size:12px;color:var(--railmute)}
+.fl select{background:#16243a;color:#fff;border:1px solid #ffffff22;border-radius:6px;padding:7px 8px;font:inherit}
+.basis{font-size:12px;color:var(--railmute);line-height:1.7;border-top:1px solid #ffffff14;padding-top:10px}
+.basis b{color:var(--railink);font-weight:600}
+main{padding:20px 24px 40px;min-width:0}
+h1{font:600 24px/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 16px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--mute);font:inherit;font-weight:600;padding:10px 14px;cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--acc);border-bottom-color:var(--acc)}
+button:focus-visible,select:focus-visible,tr:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.kpi .l{color:var(--mute);font-size:12px}.kpi .v{font-size:26px;font-weight:650;margin:2px 0}.kpi .n{font-size:12px;color:var(--mute)}
+.kpi.bad .v{color:var(--r)}
+.wrap{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:900px}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--mute);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tr.row{cursor:pointer}tr.row:hover{background:var(--accb)}
+.num{text-align:right}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+.green{background:var(--gb);color:var(--g)}.amber{background:var(--ab);color:var(--a)}.red{background:var(--rb);color:var(--r)}
+td select{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 6px;font:inherit}
+.bar{height:8px;border-radius:4px;background:var(--line);min-width:120px;position:relative;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--acc)}
+.bar i.over{background:var(--r)}
+.note{color:var(--mute);font-size:12px;margin:10px 2px}
+.chart{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:16px}.chart svg{width:100%;height:auto;display:block}.chart .note{margin:2px 0 6px}.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}.tall th{position:sticky;top:0;background:var(--panel)}.leg{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mute)}.leg i{display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:middle}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--panel);border-left:1px solid var(--line);box-shadow:-12px 0 32px #0003;transform:translateX(102%);transition:transform .2s;overflow-y:auto;padding:calc(20px + env(safe-area-inset-top,0px)) 22px calc(30px + env(safe-area-inset-bottom,0px));z-index:5}
+.drawer.open{transform:none}
+.drawer h2{font:600 20px/1.2 Georgia,serif;margin:0 0 4px}
+.close{float:right;background:var(--accb);color:var(--acc);border:0;border-radius:6px;padding:6px 10px;font:inherit;font-weight:600;cursor:pointer}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px;margin:14px 0 20px}
+.grid div span{display:block;font-size:12px;color:var(--mute)}.grid div b{font-weight:600}
+.drawer h4{margin:18px 0 8px;font-size:14px}
+.log{border-left:2px solid var(--acc);padding:2px 0 2px 12px;margin:0 0 12px}
+.log b{display:block}.log span{font-size:12px;color:var(--mute)}
+@media (max-width:880px){.app{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}main{padding:16px}}
+.drawer:not(.open){box-shadow:none}.tall th{white-space:normal;vertical-align:bottom}.tall td,.tall th{padding-left:10px;padding-right:10px}
+@media (prefers-reduced-motion:reduce){.drawer{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+ <div class="brand">DeployCo<small>Project planning and P&amp;L control plane</small></div>
+ <div>
+  <h3>Connected systems</h3>
+  <div class="sys"><i class="dot"></i><div><b>NetSuite</b><span>GL, budgets, AP. Synced 2 min ago</span></div></div>
+  <div class="sys"><i class="dot"></i><div><b>Navan</b><span>Travel and expense. Synced 14 min ago</span></div></div>
+  <div class="sys"><i class="dot"></i><div><b>Workday</b><span>Headcount and rates. Synced 1 hr ago</span></div></div>
+  <div class="sys"><i class="dot"></i><div><b>Salesforce</b><span>Contracts and change orders. Synced 32 min ago</span></div></div>
+  <div class="sys"><i class="dot warn"></i><div><b>Coupa</b><span>POs and vendors. Reconnect in 3 days</span></div></div>
+  <div class="sys"><i class="dot"></i><div><b>Jira</b><span>Delivery milestones. Synced 3 min ago</span></div></div>
+ </div>
+ <div class="fl">
+  <h3>Portfolio filters</h3>
+  <label>Region<select id="fReg"></select></label>
+  <label>Milestone<select id="fMs"></select></label>
+  <label>Status flag<select id="fFl"></select></label>
+  <label>Billing type<select id="fBill"></select></label>
+ </div>
+ <div class="basis"><b>Reporting basis</b><br>Fiscal year FY27<br>Currency USD<br>Entity DeployCo Inc.<br>Cost center roll-up: Deployments</div>
+</aside>
+<main>
+ <h1>Deployment portfolio</h1>
+ <p class="sub">Plan, spend and forecast every customer deployment in one place.</p>
+ <div class="tabs" role="tablist" id="tabs"></div>
+ <section id="kpis" class="kpis"></section>
+ <section id="view"></section>
+</main>
+</div>
+<section class="drawer" id="drawer" aria-label="Project details"></section>
+<script>
+const MS=['planning','onboarding','execution','complete','escalation'];
+const P=[
+{id:'DP-1042',name:'Atlas Claims Automation',cust:'Northwind Health',loc:'New York',reg:'Americas',owner:'Priya Raman',hc:14,bud:4200000,sp:2650000,ms:'execution',flag:'green',bill:'Fixed fee',start:'2026-03-02',end:'2027-01-29',gm:41,eac:.98,hcs:.74,sp_:'D. Okafor, COO'},
+{id:'DP-1047',name:'Helios Grid Copilot',cust:'Helios Energy',loc:'Houston',reg:'Americas',owner:'Marcus Lee',hc:9,bud:2900000,sp:2480000,ms:'escalation',flag:'red',bill:'Time and materials',start:'2026-01-12',end:'2026-12-18',gm:22,eac:1.14,hcs:.69,sp_:'R. Castillo, CIO'},
+{id:'DP-1051',name:'Meridian Support Agents',cust:'Meridian Bank',loc:'London',reg:'EMEA',owner:'Hannah Weiss',hc:11,bud:3600000,sp:1240000,ms:'onboarding',flag:'amber',bill:'Milestone based',start:'2026-08-24',end:'2027-05-14',gm:36,eac:1.04,hcs:.78,sp_:'J. Whitfield, CDO'},
+{id:'DP-1056',name:'Orion Supply Planner',cust:'Orion Logistics',loc:'Frankfurt',reg:'EMEA',owner:'Tomas Berg',hc:7,bud:1900000,sp:620000,ms:'planning',flag:'green',bill:'Fixed fee',start:'2026-10-05',end:'2027-04-02',gm:44,eac:1,hcs:.7,sp_:'A. Keller, VP Ops'},
+{id:'DP-1060',name:'Kestrel Field Assistant',cust:'Kestrel Telecom',loc:'Singapore',reg:'APAC',owner:'Mei Tan',hc:12,bud:3300000,sp:2210000,ms:'execution',flag:'amber',bill:'Time and materials',start:'2026-04-20',end:'2027-02-26',gm:31,eac:1.07,hcs:.72,sp_:'L. Chong, CTO'},
+{id:'DP-1063',name:'Vantage Underwriting Review',cust:'Vantage Insurance',loc:'Chicago',reg:'Americas',owner:'Dev Patel',hc:6,bud:1500000,sp:1490000,ms:'complete',flag:'green',bill:'Fixed fee',start:'2026-02-09',end:'2026-09-25',gm:47,eac:.99,hcs:.8,sp_:'S. Brandt, CFO'},
+{id:'DP-1068',name:'Lumen Knowledge Search',cust:'Lumen Pharma',loc:'Austin',reg:'Americas',owner:'Priya Raman',hc:8,bud:2400000,sp:1730000,ms:'execution',flag:'green',bill:'Milestone based',start:'2026-05-11',end:'2027-01-15',gm:39,eac:.97,hcs:.76,sp_:'E. Novak, CSO'},
+{id:'DP-1072',name:'Sakura Dispatch Optimizer',cust:'Sakura Mobility',loc:'Tokyo',reg:'APAC',owner:'Kenji Mori',hc:10,bud:3100000,sp:760000,ms:'onboarding',flag:'green',bill:'Time and materials',start:'2026-09-14',end:'2027-06-11',gm:34,eac:1.02,hcs:.73,sp_:'Y. Hayashi, COO'}];
+const DEC=[['Approved scope change to add two data sources','+$180K','Customer sponsor signed the change order'],['Moved go-live two weeks to avoid customer change freeze','$0','Delivery lead and sponsor agreed'],['Backfilled two engineers from the bench','+$96K','Staffing gap closed in week 3'],['Swapped contractor vendor to reduce blended rate','-$64K','Procurement approved via Coupa PO'],['Paused travel until security review completes','-$22K','Owner and finance partner aligned']];
+const DAYS=['Nov 3','Oct 14','Sep 29','Sep 8'];
+const st={tab:'Projects',reg:'All',ms:'All',fl:'All',bill:'All',open:null};
+const TABS=['Projects','HC Based Expense','Non-HC Based Expense','Forecast'];
+const $=n=>Math.abs(n)>=1e6?(n<0?'-':'')+'$'+(Math.abs(n)/1e6).toFixed(2)+'M':(n<0?'-':'')+'$'+Math.round(Math.abs(n)/1e3)+'K';
+const pc=n=>Math.round(n*100)+'%';
+const flag=p=>p.ms==='escalation'?'red':p.flag;
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+const NOW=new Date('2026-11-15');
+const mon=p=>Math.max(1,(NOW-new Date(p.start))/2.63e9);
+function opts(id,vals,key){const e=document.getElementById(id);e.innerHTML=['All',...vals].map(v=>`<option>${v}</option>`).join('');e.onchange=()=>{st[key]=e.value;render()}}
+opts('fReg',[...new Set(P.map(p=>p.reg))],'reg');
+opts('fMs',MS.map(cap),'ms');
+opts('fFl',['Green','Amber','Red'],'fl');
+opts('fBill',[...new Set(P.map(p=>p.bill))],'bill');
+const list=()=>P.filter(p=>(st.reg==='All'||p.reg===st.reg)&&(st.ms==='All'||cap(p.ms)===st.ms)&&(st.fl==='All'||cap(flag(p))===st.fl)&&(st.bill==='All'||p.bill===st.bill));
+function kpis(L){
+ const b=L.reduce((s,p)=>s+p.bud,0),s=L.reduce((a,p)=>a+p.sp,0),e=L.reduce((a,p)=>a+p.bud*p.eac,0);
+ const risk=L.filter(p=>flag(p)!=='green').length,esc=L.filter(p=>p.ms==='escalation').length;
+ const v=b?(e-b)/b:0;
+ document.getElementById('kpis').innerHTML=`
+ <div class="kpi"><div class="l">Total projects</div><div class="v">${L.length}</div><div class="n">${L.filter(p=>p.ms!=='complete').length} in flight</div></div>
+ <div class="kpi"><div class="l">Budget utilization</div><div class="v">${b?pc(s/b):'0%'}</div><div class="n">${$(s)} of ${$(b)} budget</div></div>
+ <div class="kpi ${v>0.02?'bad':''}"><div class="l">Forecast variance at completion</div><div class="v">${v>0?'+':''}${(v*100).toFixed(1)}%</div><div class="n">${$(e)} forecast vs ${$(b)} budget</div></div>
+ <div class="kpi ${risk?'bad':''}"><div class="l">Projects at risk</div><div class="v">${risk}</div><div class="n">${esc} in escalation</div></div>`}
+function table(h,rows,cls){return `<div class="wrap"><table><thead><tr>${h.map((x,i)=>`<th class="${cls&&cls[i]||''}">${x}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`}
+function qtrs(L){
+ const D=864e5,Q=[[2026,0],[2026,1],[2026,2],[2026,3],[2027,0],[2027,1]];
+ return Q.map(([yr,q])=>{const a=new Date(yr,q*3,1),b=new Date(yr,q*3+3,1);let bud=0,val=0;
+  L.forEach(p=>{const s=new Date(p.start),e=new Date(p.end),cut=new Date(Math.min(NOW,e));
+   const ov=(x,z)=>Math.max(0,(Math.min(z,b)-Math.max(x,a))/D);
+   bud+=p.bud/((e-s)/D)*ov(s,e);
+   val+=p.sp/Math.max(1,(cut-s)/D)*ov(s,cut);
+   const rem=Math.max(0,p.bud*p.eac-p.sp),left=(e-NOW)/D;
+   if(left>0)val+=rem/left*ov(NOW,e)});
+  return {l:'Q'+(q+1)+' '+yr,bud,val,fc:b>NOW}})}
+function chart(L){
+ const d=qtrs(L),W=760,H=280,m={l:56,r:44,t:16,b:34},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ const max=(Math.max(...d.map(x=>Math.max(x.bud,x.val)))*1.12)||1;
+ const X=i=>m.l+iw*i/(d.length-1),Y=v=>m.t+ih*(1-v/max);
+ const over=d.filter(x=>x.val>x.bud);
+ let g='',seg='';
+ for(let k=0;k<=4;k++){const v=max*k/4;g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--mute)">${$(v)}</text>`}
+ for(let i=1;i<d.length;i++){const bad=d[i].val>d[i].bud;seg+=`<line x1="${X(i-1)}" y1="${Y(d[i-1].val)}" x2="${X(i)}" y2="${Y(d[i].val)}" stroke="${bad?'var(--r)':'var(--acc)'}" stroke-width="3" ${d[i].fc?'stroke-dasharray="7 5"':''}/>`}
+ const pts=d.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x.val)}" r="5" fill="${x.val>x.bud?'var(--r)':'var(--acc)'}"><title>${x.l}: ${x.fc?'forecast':'actual'} ${$(x.val)} vs budget ${$(x.bud)}</title></circle>`).join('');
+ const lab=d.map((x,i)=>`<text x="${X(i)}" y="${H-10}" text-anchor="middle" font-size="11" fill="var(--mute)">${x.l}${x.fc?' (fcst)':''}</text>`).join('');
+ const msg=over.length?'Over budget in '+over.map(x=>x.l+' by '+$(x.val-x.bud)).join(', ')+'.':'Every quarter stays within budget.';
+ return `<div class="chart"><b>Budget vs actual by quarter</b><p class="note">${msg}</p><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Quarterly budget versus actual and forecast">${g}<polyline points="${d.map((x,i)=>X(i)+','+Y(x.bud)).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="2"/>${seg}${pts}${lab}</svg><div class="leg"><span><i style="background:var(--ink)"></i>Budget</span><span><i style="background:var(--acc)"></i>Actual, then forecast (dashed)</span><span><i style="background:var(--r)"></i>Over budget</span></div></div>`}
+function hcView(L){
+ const FN=['Avery','Jordan','Maya','Liam','Sofia','Noah','Priya','Ethan','Chloe','Arjun','Zoe','Mateo','Hana','Omar','Ivy','Luca','Nina','Kai','Rosa','Theo'],LN=['Nguyen','Brooks','Patel','Silva','Kim','Hughes','Okafor','Ruiz','Larsen','Sato','Mehta','Cole','Dubois','Reyes','Walsh','Ito'],RO=['Deployment engineer','Solutions architect','Program manager','Data engineer','Finance partner','Customer success lead'],W=[1.25,1.1,1,.9,.85],C=[['Payroll',.66],['Benefits',.13],['Payroll taxes',.08],['Bonus and commission',.08],['Equity compensation',.05]];
+ const rows=[],tot=C.map(()=>0);
+ L.forEach((p,pi)=>{const w=Array.from({length:p.hc},(_,i)=>W[(i+pi)%5]),sw=w.reduce((a,b)=>a+b,0);
+  w.forEach((x,i)=>{const t=p.sp*p.hcs*x/sw;C.forEach((c,k)=>tot[k]+=t*c[1]);rows.push(`<tr><td><b>${FN[(pi*7+i*3)%FN.length]} ${LN[(pi*5+i*2)%LN.length]}</b></td><td>${RO[(pi+i)%6]}</td><td>${p.name}</td>${C.map(c=>`<td class="num">${$(t*c[1])}</td>`).join('')}<td class="num"><b>${$(t)}</b></td></tr>`)})});
+ const all=tot.reduce((a,b)=>a+b,0);
+ const cards=`<div class="cats">${C.map((c,k)=>`<div class="kpi"><div class="l">${c[0]}</div><div class="v">${$(tot[k])}</div><div class="n">${pc(tot[k]/all)} of HC spend</div></div>`).join('')}</div>`;
+ const total=`<tr><td><b>Total, ${rows.length} people</b></td><td></td><td></td>${tot.map(t=>`<td class="num"><b>${$(t)}</b></td>`).join('')}<td class="num"><b>${$(all)}</b></td></tr>`;
+ return cards+table(['Person','Role','Project',...C.map(c=>c[0]),'Total'],rows.join('')+total,['','','','num','num','num','num','num','num']).replace('class="wrap"','class="wrap tall" style="max-height:560px;overflow:auto"')+'<p class="note">People are sample records. Payroll and benefits come from Workday, and spend to date is the people-cost share of each project.</p>'}
+function nonHcView(L){
+ const K=[['Travel (Navan)','Discretionary','Navan',.15,.17],['Contractors and vendors (Coupa)','Discretionary','Coupa',.23,.22],['Training and events','Discretionary','NetSuite AP',.05,.04],['Software and tools','Discretionary','NetSuite AP',.07,.08],['Building and facilities','Non-discretionary','NetSuite GL',.2,.19],['Cloud hosting','Non-discretionary','NetSuite AP',.14,.14],['Insurance and compliance','Non-discretionary','NetSuite GL',.07,.07],['Equipment depreciation','Non-discretionary','NetSuite fixed assets',.09,.09]];
+ const nb=L.reduce((a,p)=>a+p.bud*(1-p.hcs),0),n=L.reduce((a,p)=>a+p.sp*(1-p.hcs),0),ne=L.reduce((a,p)=>a+p.bud*p.eac*(1-p.hcs),0);
+ const row=(nm,ty,src,b,s,f,bold)=>`<tr><td>${bold?'<b>'+nm+'</b>':nm}</td><td>${ty?`<span class="pill ${ty==='Discretionary'?'amber':'green'}">${ty}</span>`:''}</td><td>${src}</td><td class="num">${$(b)}</td><td class="num">${$(s)}</td><td><div class="bar"><i class="${s>b?'over':''}" style="width:${Math.min(100,s/b*100)}%"></i></div></td><td class="num">${$(f)}</td></tr>`;
+ let h='';
+ ['Discretionary','Non-discretionary'].forEach(t=>{const ks=K.filter(k=>k[1]===t),sum=i=>ks.reduce((a,k)=>a+k[i],0);
+  ks.forEach(k=>h+=row(k[0],t,k[2],nb*k[3],n*k[4],ne*k[4]));
+  h+=row(t+' subtotal','','',nb*sum(3),n*sum(4),ne*sum(4),1).replace('<tr>','<tr style="background:var(--accb)">')});
+ h+=row('Total non-HC expense','','',nb,n,ne,1);
+ return table(['Category','Type','Source system','Budget','Spend to date','Used','Forecast at completion'],h,['','','','num','num','','num'])+'<p class="note">Discretionary spend can be reduced or deferred by project owners. Non-discretionary spend is committed, such as leases, hosting and insurance, and changes only with contracts.</p>'}
+function render(){
+ document.getElementById('tabs').innerHTML=TABS.map(t=>`<button role="tab" aria-selected="${t===st.tab}" data-t="${t}">${t}</button>`).join('');
+ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{st.tab=b.dataset.t;render()});
+ const L=list();kpis(L);const v=document.getElementById('view');
+ if(!L.length){v.innerHTML='<p class="note">No projects match these filters. Reset a filter on the left to see more.</p>';return}
+ if(st.tab==='Projects'){
+  v.innerHTML=table(['Name','Customer','Location','Owner','Total HCs','Total budget','Spend to date','Milestone','Status flag'],
+  L.map(p=>`<tr class="row" tabindex="0" data-id="${p.id}"><td><b>${p.name}</b></td><td>${p.cust}</td><td>${p.loc}</td><td>${p.owner}</td><td class="num">${p.hc}</td><td class="num">${$(p.bud)}</td><td class="num">${$(p.sp)} <span class="note">(${pc(p.sp/p.bud)})</span></td><td><select data-m="${p.id}" aria-label="Milestone for ${p.name}">${MS.map(m=>`<option value="${m}" ${m===p.ms?'selected':''}>${m}</option>`).join('')}</select></td><td><span class="pill ${flag(p)}">${cap(flag(p))}</span></td></tr>`).join(''),['','','','','num','num','num']);
+  v.innerHTML+='<p class="note">Select a project to see its details and decision log. Setting a milestone to escalation turns its flag red.</p>';
+  v.querySelectorAll('tr.row').forEach(r=>{r.onclick=e=>{if(e.target.tagName!=='SELECT')openP(r.dataset.id)};r.onkeydown=e=>{if(e.key==='Enter')openP(r.dataset.id)}});
+  v.querySelectorAll('select[data-m]').forEach(s=>s.onchange=()=>{P.find(p=>p.id===s.dataset.m).ms=s.value;render()});
+ }else if(st.tab==='HC Based Expense'){v.innerHTML=hcView(L);}else if(st.tab==='HC Based Expense OLD'){
+  v.innerHTML=table(['Project','HCs','Loaded cost per HC per month','HC budget','HC spend to date','Used'],L.map(p=>{const h=p.sp*p.hcs,hb=p.bud*p.hcs;return `<tr><td><b>${p.name}</b></td><td class="num">${p.hc}</td><td class="num">${$(h/(p.hc*mon(p)))}</td><td class="num">${$(hb)}</td><td class="num">${$(h)}</td><td><div class="bar"><i style="width:${Math.min(100,h/hb*100)}%"></i></div></td></tr>`}).join(''),['','num','num','num','num']);
+  v.innerHTML+='<p class="note">Headcount and rates come from Workday. HC spend is the share of spend to date attributed to people cost.</p>';
+ }else if(st.tab==='Non-HC Based Expense'){v.innerHTML=nonHcView(L);}else if(st.tab==='Non-HC Based Expense OLD'){
+  v.innerHTML=table(['Project','Travel (Navan)','Contractors and vendors (Coupa)','Equipment and cloud (NetSuite AP)','Total non-HC spend','Non-HC budget'],L.map(p=>{const n=p.sp*(1-p.hcs);return `<tr><td><b>${p.name}</b></td><td class="num">${$(n*.35)}</td><td class="num">${$(n*.4)}</td><td class="num">${$(n*.25)}</td><td class="num"><b>${$(n)}</b></td><td class="num">${$(p.bud*(1-p.hcs))}</td></tr>`}).join(''),['','num','num','num','num','num']);
+ }else{
+  v.innerHTML=chart(L)+table(['Project','Budget','Spend to date','Forecast at completion','Variance','Burn vs forecast'],L.map(p=>{const e=p.bud*p.eac,d=e-p.bud;return `<tr><td><b>${p.name}</b></td><td class="num">${$(p.bud)}</td><td class="num">${$(p.sp)}</td><td class="num">${$(e)}</td><td class="num"><span class="pill ${d>p.bud*.05?'red':d>0?'amber':'green'}">${d>0?'+':''}${$(d)}</span></td><td><div class="bar"><i class="${d>0?'over':''}" style="width:${Math.min(100,p.sp/e*100)}%"></i></div></td></tr>`}).join(''),['','num','num','num','num']);
+  v.innerHTML+='<p class="note">Forecast at completion combines actuals to date with remaining staffing plans and open POs.</p>';
+ }}
+function openP(id){
+ const i=P.findIndex(p=>p.id===id),p=P[i],e=p.bud*p.eac,burn=p.sp/mon(p),left=Math.max(0,p.bud-p.sp);
+ const G=[['Project ID',p.id],['Customer',p.cust],['Customer sponsor',p.sp_],['Project owner',p.owner],['Location',p.loc+', '+p.reg],['Billing type',p.bill],['Start date',p.start],['Target end date',p.end],['Total HCs',p.hc],['Total budget',$(p.bud)],['Spend to date',$(p.sp)],['Forecast at completion',$(e)],['Gross margin',p.gm+'%'],['Monthly burn',$(burn)],['Runway at current burn',(burn?(left/burn).toFixed(1):'0')+' months'],['Open change orders',(i%3)+' ('+$((i%3)*90000)+')']];
+ const logs=[0,1,2].map(k=>{const d=DEC[(i+k)%DEC.length];return `<div class="log"><b>${d[0]}</b><span>${DAYS[k]} · Impact ${d[1]} · ${d[2]}</span></div>`}).join('');
+ const d=document.getElementById('drawer');
+ d.innerHTML=`<button class="close" id="cl">Close</button><h2>${p.name}</h2><span class="pill ${flag(p)}">${cap(flag(p))}</span> <span class="pill" style="background:var(--accb);color:var(--acc)">${cap(p.ms)}</span>
+ <div class="grid">${G.map(g=>`<div><span>${g[0]}</span><b>${g[1]}</b></div>`).join('')}</div>
+ <h4>Decision log</h4>${logs}
+ <h4>Systems linked to this project</h4><p class="note">NetSuite project ${p.id}, Workday cost center DEP-${p.id.slice(3)}, Navan trip group ${p.id}, Jira board ${p.id.replace('DP-','DEP')}</p>`;
+ d.classList.add('open');document.getElementById('cl').onclick=()=>d.classList.remove('open');document.getElementById('cl').focus();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('drawer').classList.remove('open')});
+render();
+</script>
+</body>
+</html>
